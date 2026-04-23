@@ -1,0 +1,38 @@
+version: 0.0.1
+type: plugin
+author: junjiem
+name: funasr
+label:
+  en_US: FunASR Tool
+  zh_Hans: FunASR工具
+description:
+  en_US: Output text through the FunASR audio file transcription service.
+  zh_Hans: 通过FunASR音频文件转写服务输出文字。
+icon: icon.svg
+resource:
+  memory: 268435456
+  permission:
+    model:
+      enabled: false
+      llm: false
+      text_embedding: false
+      rerank: false
+      tts: false
+      speech2text: false
+      moderation: false
+plugins:
+  tools:
+    - provider/funasr.yaml
+meta:
+  version: 0.0.1
+  arch:
+    - amd64
+    - arm64
+  runner:
+    language: python
+    version: "3.12"
+    entrypoint: main
+created_at: 2026-04-22T16:07:55.7328669+08:00
+privacy: PRIVACY.md
+repo: https://github.com/junjiem/dify-plugin-tools-funasr
+verified: false

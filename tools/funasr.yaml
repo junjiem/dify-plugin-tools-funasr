@@ -1,0 +1,116 @@
+identity:
+  author: junjiem
+  name: funasr
+  label:
+    en_US: Audio file transcription
+    zh_Hans: 音频文件转写
+description:
+  human:
+    en_US: Audio file to text.
+    zh_Hans: 音频文件转文字。
+  llm: Audio file to text.
+parameters:
+  - name: host
+    type: string
+    required: true
+    label:
+      en_US: Host
+      zh_Hans: 主机地址
+    human_description:
+      en_US: FunASR server host, e.g. 127.0.0.1
+      zh_Hans: FunASR服务主机地址，如 127.0.0.1
+    form: form
+  - name: port
+    type: number
+    required: true
+    default: 10095
+    label:
+      en_US: Port
+      zh_Hans: 端口
+    human_description:
+      en_US: FunASR server port
+      zh_Hans: FunASR服务端口
+    form: form
+  - name: ssl
+    type: select
+    required: false
+    default: "0"
+    label:
+      en_US: SSL
+      zh_Hans: SSL
+    human_description:
+      en_US: Enable SSL connection (1=on, 0=off)
+      zh_Hans: 是否开启SSL连接（1=开启，0=关闭）
+    options:
+      - value: "1"
+        label:
+          en_US: "On"
+          zh_Hans: "开启"
+      - value: "0"
+        label:
+          en_US: "Off"
+          zh_Hans: "关闭"
+    form: form
+  - name: audio_file
+    type: file
+    required: true
+    label:
+      en_US: Audio file
+      zh_Hans: 音频文件
+    human_description:
+      en_US: Audio file to transcribe (wav, pcm, mp3, flac, m4a, mp4, etc.)
+      zh_Hans: 需要转写的音频文件（支持wav、pcm、mp3、flac、m4a、mp4等格式）
+    form: form
+  - name: separate_channels
+    type: select
+    required: false
+    default: "0"
+    label:
+      en_US: Separate Stereo Channels
+      zh_Hans: 分离双声道
+    human_description:
+      en_US: Split stereo audio into left/right channels for independent ASR, then interleave by timestamp to produce a conversation transcript.
+      zh_Hans: 将双声道音频拆分为左右声道独立识别，再按时间戳交错排列生成对话记录。
+    options:
+      - value: "1"
+        label:
+          en_US: "On"
+          zh_Hans: "开启"
+      - value: "0"
+        label:
+          en_US: "Off"
+          zh_Hans: "关闭"
+    form: form
+  - name: use_itn
+    type: select
+    required: false
+    default: "1"
+    label:
+      en_US: Use ITN
+      zh_Hans: 逆文本正则化
+    human_description:
+      en_US: Enable Inverse Text Normalization (1=on, 0=off)
+      zh_Hans: 是否使用逆文本正则化，如将"一百二十三"转为"123"（1=开启，0=关闭）
+    options:
+      - value: "1"
+        label:
+          en_US: "On"
+          zh_Hans: "开启"
+      - value: "0"
+        label:
+          en_US: "Off"
+          zh_Hans: "关闭"
+    form: form
+  - name: hotword
+    type: string
+    required: false
+    label:
+      en_US: Hotwords
+      zh_Hans: 热词
+    human_description:
+      en_US: "Hotwords to improve recognition accuracy, format: word1 weight1\\nword2 weight2"
+      zh_Hans: "热词，用于提升特定词汇识别准确率，格式：每行一个热词（热词 权重），如：阿里巴巴 20"
+    form: form
+extra:
+  python:
+    source: tools/funasr.py

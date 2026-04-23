@@ -1,0 +1,29 @@
+name: "🕷️ Bug report Bug报告"
+description: "Report errors or unexpected behavior. 创建一个 Bug 报告以帮助我们改进。"
+labels:
+  - bug
+body:
+  - type: checkboxes
+    attributes:
+      label: "Please confirm before submission 在提交之前，请确认"
+      options:
+        - label: |
+            I have searched for existing issues [search for existing issues](https://github.com/junjiem/dify-plugin-tools-funasr/issues), including closed ones. 
+            我已经搜索了现有问题[搜索现有问题](https://github.com/junjiem/dify-plugin-tools-funasr/issues)，包括已关闭的问题。"
+          required: true
+  - type: input
+    attributes:
+      label: "Dify version Dify版本"
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: "Plugin version 插件版本"
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: "Problem description 问题描述"
+      description: "Please describe the problem you have encountered clearly and concisely. 请清晰简洁地描述你遇到的问题。"
+    validations:
+      required: true

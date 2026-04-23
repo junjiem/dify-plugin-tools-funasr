@@ -1,0 +1,15 @@
+identity:
+  author: junjiem
+  name: funasr
+  label:
+    en_US: FunASR Tool
+    zh_Hans: FunASR工具
+  description:
+    en_US: Output text through the FunASR audio file transcription service.
+    zh_Hans: 通过FunASR音频文件转写服务输出文字。
+  icon: icon.svg
+tools:
+  - tools/funasr.yaml
+extra:
+  python:
+    source: provider/funasr.py
