@@ -11,12 +11,15 @@ from collections.abc import Generator
 from typing import Any
 
 import httpx
+import nest_asyncio
 import websockets
 import miniaudio
 from dify_plugin import Tool
 from dify_plugin.entities.tool import ToolInvokeMessage
 from dify_plugin.file.file import File
 from dify_plugin.file.entities import FileType
+
+nest_asyncio.apply()
 
 logger = logging.getLogger(__name__)
 
