@@ -1,4 +1,4 @@
-dify_plugin==0.2.4
+dify_plugin==0.5.1
 websockets
 miniaudio
 nest_asyncio

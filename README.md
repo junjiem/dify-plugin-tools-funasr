@@ -11,5 +11,3 @@
 ### Description
 
 Output text through the FunASR audio file transcription service.
-
-通过FunASR音频文件转写服务输出文字。
