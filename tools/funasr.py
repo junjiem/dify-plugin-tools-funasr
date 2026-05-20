@@ -86,14 +86,21 @@ class FunASRTool(Tool):
 
     @staticmethod
     def _ensure_wav(raw_bytes: bytes, extension: str) -> bytes:
-        """Convert audio bytes of any supported format to WAV.
+        """Convert audio bytes of any supported format to 16-bit PCM WAV.
 
-        If the input is already WAV, return as-is. Otherwise use miniaudio
-        (bundled decoders, no ffmpeg needed) to decode and re-encode as
-        16-bit PCM WAV. Supports MP3, FLAC, WAV, and Vorbis.
+        WAV inputs are returned as-is only when they are already standard
+        16-bit PCM that Python's ``wave`` module can read. Non-PCM WAV
+        encodings (A-law, μ-law, IEEE float, 24/32-bit PCM, ...) are
+        re-encoded through miniaudio so downstream code that relies on the
+        ``wave`` module keeps working. Supports MP3, FLAC, WAV, and Vorbis.
         """
         if extension == "wav":
-            return raw_bytes
+            try:
+                with wave.open(io.BytesIO(raw_bytes), "rb") as wf:
+                    if wf.getsampwidth() == 2:
+                        return raw_bytes
+            except wave.Error:
+                pass
 
         decoded = miniaudio.decode(raw_bytes, output_format=miniaudio.SampleFormat.SIGNED16)
 
@@ -104,6 +111,31 @@ class FunASRTool(Tool):
             wf.setframerate(decoded.sample_rate)
             wf.writeframes(decoded.samples)
         return buf.getvalue()
+
+    @staticmethod
+    def _decode_wav_to_pcm16(raw_wav_bytes: bytes) -> tuple[bytes, int, int]:
+        """Decode a WAV file to interleaved 16-bit signed PCM.
+
+        Returns ``(pcm_bytes, sample_rate, n_channels)``.
+
+        Falls back to miniaudio when the standard ``wave`` module cannot
+        handle the format (e.g. A-law / μ-law / IEEE float / 24-bit PCM).
+        """
+        try:
+            with wave.open(io.BytesIO(raw_wav_bytes), "rb") as wf:
+                if wf.getsampwidth() == 2:
+                    return (
+                        wf.readframes(wf.getnframes()),
+                        wf.getframerate(),
+                        wf.getnchannels(),
+                    )
+        except wave.Error:
+            pass
+
+        decoded = miniaudio.decode(
+            raw_wav_bytes, output_format=miniaudio.SampleFormat.SIGNED16
+        )
+        return bytes(decoded.samples), decoded.sample_rate, decoded.nchannels
 
     # ------------------------------------------------------------------
     # Mono (single-channel) transcription
@@ -128,9 +160,7 @@ class FunASRTool(Tool):
             wav_format = "pcm"
         elif extension == "wav":
             wav_format = "pcm"
-            with wave.open(io.BytesIO(raw_bytes), "rb") as wf:
-                sample_rate = wf.getframerate()
-                audio_bytes = wf.readframes(wf.getnframes())
+            audio_bytes, sample_rate, _ = self._decode_wav_to_pcm16(raw_bytes)
         else:
             wav_format = "others"
 
@@ -227,40 +257,22 @@ class FunASRTool(Tool):
         text = self._merge_and_format(left_segments, right_segments)
         yield self.create_text_message(text)
 
-    @staticmethod
-    def _split_stereo_wav(raw_wav_bytes: bytes) -> tuple[bytes, bytes, int]:
-        """Split a stereo WAV file into left/right mono PCM byte streams.
+    @classmethod
+    def _split_stereo_wav(cls, raw_wav_bytes: bytes) -> tuple[bytes, bytes, int]:
+        """Split a stereo WAV file into left/right mono 16-bit PCM streams.
 
         Returns (left_pcm, right_pcm, sample_rate).
         """
-        with wave.open(io.BytesIO(raw_wav_bytes), "rb") as wf:
-            n_channels = wf.getnchannels()
-            if n_channels != 2:
-                raise ValueError(
-                    f"Expected stereo (2-channel) audio, got {n_channels} channel(s)."
-                )
-            sample_width = wf.getsampwidth()
-            sample_rate = wf.getframerate()
-            frames = wf.readframes(wf.getnframes())
+        frames, sample_rate, n_channels = cls._decode_wav_to_pcm16(raw_wav_bytes)
+        if n_channels != 2:
+            raise ValueError(
+                f"Expected stereo (2-channel) audio, got {n_channels} channel(s)."
+            )
 
-        if sample_width == 2:
-            samples = array.array("h", frames)
-            left = array.array("h", samples[0::2])
-            right = array.array("h", samples[1::2])
-            return left.tobytes(), right.tobytes(), sample_rate
-
-        frame_size = sample_width * 2
-        n_frames = len(frames) // frame_size
-        left_buf = bytearray(n_frames * sample_width)
-        right_buf = bytearray(n_frames * sample_width)
-        for i in range(n_frames):
-            so = i * frame_size
-            do = i * sample_width
-            left_buf[do : do + sample_width] = frames[so : so + sample_width]
-            right_buf[do : do + sample_width] = frames[
-                so + sample_width : so + frame_size
-            ]
-        return bytes(left_buf), bytes(right_buf), sample_rate
+        samples = array.array("h", frames)
+        left = array.array("h", samples[0::2])
+        right = array.array("h", samples[1::2])
+        return left.tobytes(), right.tobytes(), sample_rate
 
     @staticmethod
     async def _transcribe_collect(
